@@ -1,11 +1,12 @@
 import numpy as np
-import grid
+import gridtemplate
 import random as rm
 
 actions = {0:"up", 1:"down", 2:"left", 3:"right"}
 q_table = np.zeros((3*3, len(actions)))
 states = []
 total_rewards = []
+grid = gridtemplate.Grid_Template()
 
 for i in range(grid.grid_dim):
     for j in range(grid.grid_dim):
