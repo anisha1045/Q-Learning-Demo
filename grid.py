@@ -11,8 +11,7 @@ distance_delta = 0.05
 initial_row = 0
 initial_col = 0
 current_coordinates = [initial_row, initial_col]
-current_state = [0, 0]
-terminal_state = (2, 2)
+terminal_state = [2, 2]
 constant_z = 0.5
 
 
@@ -25,25 +24,25 @@ def move_robot(row, col):
     current_coordinates = grid[row][col]
     #arm.goto_cartesian_pose(current_coordinates[0], current_coordinates[1], constant_z)
     #print("robot moving")
-    print(current_state)
+    #print("Current State: ",current_state)
     return current_state
 
-def up():
+def up(current_state):
     new_row = current_state[0] - 1
     new_col = current_state[1]
     return move_robot(new_row, new_col)
 
-def down():
+def down(current_state):
     new_row = current_state[0] + 1
     new_col = current_state[1]
     return move_robot(new_row, new_col)
 
-def left():
+def left(current_state):
     new_row = current_state[0]
     new_col = current_state[1] - 1
     return move_robot(new_row, new_col)
 
-def right():
+def right(current_state):
     new_row = current_state[0]
     new_col = current_state[1] + 1
     return move_robot(new_row, new_col)
