@@ -17,8 +17,8 @@ class Grid_Template:
         self. grid = [[(0, 0) for _ in range(self.grid_dim)] for _ in range(self.grid_dim)]
         self.distance_delta = 0.1
         self.terminal_state = [2, 2]
-        self.x_start = 0.08
-        self.y_start = -0.25
+        self.x_start = 0.06
+        self.y_start = -0.27
         self.z_start = -0.44
         '''for i in range(self.grid_dim):
             for j in range(self.grid_dim):
