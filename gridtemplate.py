@@ -24,46 +24,46 @@ class Grid_Template:
             for j in range(self.grid_dim):
                self.grid[i][j] = (-i * self.distance_delta + self.initial_col, j * self.distance_delta + self.initial_col)
 '''
-    def move_robot(self, row, col):
+    def move_robot(self, row, col, end_episode):
         current_state = [row, col]
-        current_coordinates = self.grid[row][col]
         #robot.goto_cartesian_pose(current_coordinates[0], current_coordinates[1], self.constant_z)
         print("x_start: ", self.x_start)
         print("i am here")
         print("y start: ", self.y_start)
-        self.arm.goto_cartesian_pose_old([self.x_start, self.y_start, 0.0, 0.0, 0.0, 0.0, 1], relative = True)
+        if (end_episode):
+            self.arm.goto_cartesian_pose_old([self.x_start, self.y_start, 0.0, 0.0, 0.0, 0.0, 1], relative = True)
         #print("self.arm.goto_cartesian_pose_old([self.x_start, self.y_start, self.z_start, 0.0, 0.0, 0.0, 1], relative = True)robot moving")
         print("Current State: ", current_state)
         return current_state
 
-    def up(self, current_state):
+    def up(self, current_state, end_episode):
         new_row = current_state[0] - 1
         new_col = current_state[1]
         self.x_start = 0.0
         self.y_start = -self.distance_delta
         print("UP y: ", self.y_start)
-        return self.move_robot(new_row, new_col)
+        return self.move_robot(new_row, new_col, end_episode)
 
-    def down(self, current_state):
+    def down(self, current_state, end_episode):
         new_row = current_state[0] + 1
         new_col = current_state[1]
         self.x_start = 0.0
         self.y_start = self.distance_delta
-        return self.move_robot(new_row, new_col)
+        return self.move_robot(new_row, new_col, end_episode)
 
-    def left(self, current_state):
+    def left(self, current_state, end_episode):
         new_row = current_state[0]
         new_col = current_state[1] - 1
         self.y_start = 0.0
         self.x_start = self.distance_delta
-        return self.move_robot(new_row, new_col)
+        return self.move_robot(new_row, new_col, end_episode)
 
-    def right(self, current_state):
+    def right(self, current_state, end_episode):
         new_row = current_state[0]
         new_col = current_state[1] + 1
         self.y_start = 0.0
         self.x_start = -self.distance_delta
-        return self.move_robot(new_row, new_col)
+        return self.move_robot(new_row, new_col, end_episode)
 
     def reset(self):
         self.arm.home_arm()

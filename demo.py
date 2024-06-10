@@ -21,6 +21,7 @@ exploration_rate = 0.7
 exploration_decay = 0.01
 discount_factor = 0.9
 learning_rate = 0.7
+end_episode = False
 
 def get_possible_actions(state_index):
     state = states[state_index]
@@ -60,7 +61,7 @@ def choose_action(state_index):
         # print(index_of_highest)
         action_index = possible_actions[index_of_highest]
     #print("Action selected: ", actions[action_index])
-    return getattr(grid, actions[action_index])(current_state), action_index
+    return getattr(grid, actions[action_index])(current_state, end_episode), action_index
          
 def get_state_index(state):
     for i in range(len(states)):
@@ -69,6 +70,8 @@ def get_state_index(state):
     return -1
     
 for episode in range(total_episodes):
+    if (episode == total_episodes - 1):
+        end_episode = True
     print("Episode: ", episode)
     current_state = grid.reset()
     episode_reward = 0
