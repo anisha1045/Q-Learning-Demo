@@ -1,6 +1,8 @@
 import numpy as np
 import gridtemplate
 import random as rm
+import armpy
+import rospy
 
 actions = {0:"up", 1:"down", 2:"left", 3:"right"}
 q_table = np.zeros((3*3, len(actions)))
@@ -15,13 +17,14 @@ for i in range(grid.grid_dim):
 rewards = np.zeros((3,3))
 rewards[2,2] = 10
 terminal_state = grid.terminal_state
-total_episodes = 20
+total_episodes = 201
 steps_per_episode = 10
 exploration_rate = 0.7
 exploration_decay = 0.01
 discount_factor = 0.9
 learning_rate = 0.7
 end_episode = False
+arm_import = grid.arm
 
 def get_possible_actions(state_index):
     state = states[state_index]
@@ -49,6 +52,7 @@ def choose_action(state_index):
     possible_actions = get_possible_actions(state_index)
     if (check_explore < exploration_rate):
         action_index = rm.choice(possible_actions)
+        
     else:
         #print("else exploitation")
         q_vals_for_state = np.empty(len(possible_actions))
@@ -72,9 +76,10 @@ def get_state_index(state):
 for episode in range(total_episodes):
     if (episode == total_episodes - 1):
         end_episode = True
-    print("Episode: ", episode)
-    if (end_episode):
         current_state = grid.reset()
+        arm_import.close_gripper()
+    current_state = [0,0]
+    print("Episode: ", episode)    
     episode_reward = 0
     num_steps = 0
     for step in range(steps_per_episode):
@@ -92,6 +97,8 @@ for episode in range(total_episodes):
             np.max(q_table[next_state_index, :]))
             if new_state == terminal_state:
                 print("BREAK")
+                if (end_episode):
+                    arm_import.open_gripper()
                 break
             current_state = new_state
             print("===================================")
