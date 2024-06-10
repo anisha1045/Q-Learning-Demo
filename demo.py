@@ -73,7 +73,8 @@ for episode in range(total_episodes):
     if (episode == total_episodes - 1):
         end_episode = True
     print("Episode: ", episode)
-    current_state = grid.reset()
+    if (end_episode):
+        current_state = grid.reset()
     episode_reward = 0
     num_steps = 0
     for step in range(steps_per_episode):
