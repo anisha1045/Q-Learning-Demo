@@ -15,10 +15,10 @@ for i in range(grid.grid_dim):
 rewards = np.zeros((3,3))
 rewards[2,2] = 10
 terminal_state = grid.terminal_state
-total_episodes = 200
-steps_per_episode = 30
+total_episodes = 20
+steps_per_episode = 10
 exploration_rate = 0.7
-exploration_decay = 0.05
+exploration_decay = 0.01
 discount_factor = 0.9
 learning_rate = 0.7
 
@@ -96,12 +96,5 @@ for episode in range(total_episodes):
     
     exploration_rate *= (1 - exploration_decay)
     total_rewards.append(episode_reward / num_steps) 
-rewards_per_hundred = np.split(np.array(total_rewards), 20)
-count = 10
-
-print("********Average reward per thousand episodes********\n")
-for r in rewards_per_hundred:
-    print(count, ": ", str(sum(r/10)))
-    count += 10
         
 print(q_table)
