@@ -7,16 +7,16 @@ import rospy
 
 class Grid_Template:
 
-    def __init__(self):
+    def __init__(self, grid_dim):
 
         rospy.init_node("test", anonymous = True)
         self.arm = armpy.kortex_arm.Arm()
         self.arm = armpy.initialize("gen3_lite")
 
-        self.grid_dim = 3
+        self.grid_dim = grid_dim # can change for any grid dimension
         self. grid = [[(0, 0) for _ in range(self.grid_dim)] for _ in range(self.grid_dim)]
         self.distance_delta = 0.1
-        self.terminal_state = [2, 2]
+        self.terminal_state = [grid_dim - 1, grid_dim - 1]
         self.x_start = 0.06
         self.y_start = -0.27
         self.z_start = -0.44

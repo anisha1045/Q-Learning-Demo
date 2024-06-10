@@ -5,19 +5,20 @@ import armpy
 import rospy
 
 actions = {0:"up", 1:"down", 2:"left", 3:"right"}
-q_table = np.zeros((3*3, len(actions)))
+grid_dim = 3
+q_table = np.zeros((grid_dim*grid_dim, len(actions)))
 states = []
 total_rewards = []
-grid = gridtemplate.Grid_Template()
+grid = gridtemplate.Grid_Template(grid_dim)
 
-for i in range(grid.grid_dim):
-    for j in range(grid.grid_dim):
+for i in range(grid_dim):
+    for j in range(grid_dim):
         states.append([i, j])
 
-rewards = np.zeros((3,3))
-rewards[2,2] = 10
+rewards = np.zeros((grid_dim, grid_dim))
+rewards[grid_dim-1,grid_dim-1] = 10
 terminal_state = grid.terminal_state
-total_episodes = 201
+total_episodes = 501
 steps_per_episode = 10
 exploration_rate = 0.7
 exploration_decay = 0.01
@@ -32,13 +33,13 @@ def get_possible_actions(state_index):
     if (state[0] == 0):
         # we can't move up
         possible_actions.remove(0)
-    if (state[0] == 2):
+    if (state[0] == grid_dim - 1):
         # we can't move down
         possible_actions.remove(1)
     if (state[1] == 0):
         # we can't move left
         possible_actions.remove(2)
-    if (state[1] == 2):
+    if (state[1] == grid_dim - 1):
         # we can't move right
         possible_actions.remove(3)
     return possible_actions
