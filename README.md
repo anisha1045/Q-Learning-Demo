@@ -1,6 +1,6 @@
 ## Q Learning Demo 
 
-This code uses the [Armpy library] (https://github.com/AABL-Lab/armpy) from [AABL Lab] (https://aabl.cs.tufts.edu/):  which uses ROS 1 Noetic and the MOVEIT package.
+This code uses the [Armpy library](https://github.com/AABL-Lab/armpy) from [AABL Lab](https://aabl.cs.tufts.edu/):  which uses ROS 1 Noetic and the MOVEIT package.
 
 #### Main files 
 
