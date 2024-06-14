@@ -2,9 +2,10 @@ import numpy as np
 import random as rm
 import action
 import state
+import robot
 
 class Environment:
-    def __init__(self):
+    def __init__(self, arm):
         self.actions = action.Action.ALL
         self.states = [state.State(actions = [0, 1], reward = -1, location=[[0, 0, 0], [0, 0, 0]]),
                    state.State(actions = [2, 4], reward = -1, location=[[0, 0, 0], [0, 0, 0]]),
@@ -13,6 +14,7 @@ class Environment:
                    state.State(actions = [], reward = 10, location=[[0, 0, 0], [0, 0, 0]])]
         self.initial_state = 0
         self.current_state_index = 0
+        self.arm = arm
         self.terminal_states = [2, 4]
 
     # returns num_steps, stop, episode_reward
@@ -21,7 +23,7 @@ class Environment:
         #state_index = self.get_state_index(current_state)
         print("Current state index: ", self.current_state_index)
                 # WE LEFT OFF HERE
-        new_state_index, action_index = policy.get_action(self.current_state_index, self.states)
+        new_state_index, action_index = policy.get_action(self.current_state_index, self.states, self.arm)
         print("New state index: ", new_state_index)
         new_state = self.states[new_state_index]
         #print("New state: ",new_state)
@@ -32,13 +34,17 @@ class Environment:
         stop = False
         if new_state_index in self.terminal_states:
             print("BREAK")
-            #CALL TO ROBOT CLASS
+            self.terminal_state_cb()
             stop = True
         self.current_state_index = new_state_index
         print("===================================")
         return num_steps, stop, episode_reward
 
+    def terminal_state_cb(self):
+        pass
+
     def reset(self):
+        self.arm.home_arm()
         self.current_state_index = 0
 
 class QTablePolicy:
@@ -70,7 +76,7 @@ class QTablePolicy:
         self.exploration_rate *= (1 - self.exploration_decay)
         print(self.q_table)
     
-    def get_action(self, state_index, states):
+    def get_action(self, state_index, states, arm):
         # returns the state number and action index
         # assuming states is a dict mapping state_index : state() objects
         check_explore = rm.uniform(0, 1)
@@ -89,7 +95,7 @@ class QTablePolicy:
                     index_of_highest = ind
                 ind += 1
             action_index = possible_actions[index_of_highest]
-        new_state_index = action.Action.ALL[action_index].execute()
+        new_state_index = action.Action.ALL[action_index].execute(arm)
         return new_state_index, action_index
     
     def update_q_table(self, state_index, action_index, new_state_index, reward):
@@ -100,15 +106,13 @@ class QTablePolicy:
             np.max(self.q_table[new_state_index, :]))
 
 
-class MDP:
 
-    def main(self):
-        env = Environment()
-        current_policy = QTablePolicy(len(env.states), len(env.actions))
-        current_policy.learn_task(env)
+        
 
-mdp_object  = MDP()
-mdp_object.main()
+if __name__=="__main__":
+    env = Environment(robot.Robot())
+    current_policy = QTablePolicy(len(env.states), len(env.actions))
+    current_policy.learn_task(env)
     
     
         

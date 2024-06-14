@@ -7,4 +7,3 @@ class State:
         self.actions = actions
         self.reward = reward
 
-    
