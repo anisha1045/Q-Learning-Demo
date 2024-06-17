@@ -1,14 +1,15 @@
-import rospy
-import armpy 
+#import rospy
+#import armpy 
 
 class Robot:
 
     def __init__(self):
 
-        rospy.init_node("test", anonymous = True)
-        self.arm = armpy.kortex_arm.Arm()
-        self.arm = armpy.initialize("gen3_lite")
-        self.arm.home_arm()
+        #rospy.init_node("test", anonymous = True)
+        #self.arm = armpy.kortex_arm.Arm()
+        #self.arm = armpy.initialize("gen3_lite")
+        #self.arm.home_arm()
+        self.arm = "Hi I am arm"
 
     def reset(self, x, y, z):
        self.x1 = x

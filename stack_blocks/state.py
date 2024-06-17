@@ -4,6 +4,14 @@ class State:
         #self.description = args if args else kwargs
         # contains the indices of possible actions
         self.description = location
-        self.actions = actions
+        self.action_indices = actions
         self.reward = reward
 
+    def get_reward(self):
+        return self.reward
+    
+    def get_action_indices(self):
+        return self.action_indices
+    
+    def to_string(self):
+        return str(self.description) 

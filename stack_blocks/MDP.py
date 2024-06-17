@@ -1,63 +1,56 @@
 import numpy as np
 import random as rm
-import action
-import state
 import robot
+import task
 
 class Environment:
+    
     def __init__(self, arm):
-        self.actions = action.Action.ALL
-        self.states = [state.State(actions = [0, 1], reward = -1, location=[[0, 0, 0], [0, 0, 0]]),
-                   state.State(actions = [2, 4], reward = -1, location=[[0, 0, 0], [0, 0, 0]]),
-                   state.State(actions =[], reward = 10, location=[[0, 0, 0], [0, 0, 0]]), 
-                   state.State(actions = [3, 4], reward = -1, location=[[0, 0, 0], [0, 0, 0]]),
-                   state.State(actions = [], reward = 10, location=[[0, 0, 0], [0, 0, 0]])]
-        self.initial_state = 0
-        self.current_state_index = 0
         self.arm = arm
-        self.terminal_states = [2, 4]
-
+        self.task = task.Task_Stack()
+        self.states = self.task.get_states()
+        self.actions_length = self.task.get_actions_length()
+        
     # returns num_steps, stop, episode_reward
     def step(self, num_steps, policy, episode_reward):
         num_steps += 1
-        #state_index = self.get_state_index(current_state)
-        print("Current state index: ", self.current_state_index)
-                # WE LEFT OFF HERE
-        new_state_index, action_index = policy.get_action(self.current_state_index, self.states, self.arm)
-        print("New state index: ", new_state_index)
-        new_state = self.states[new_state_index]
-        #print("New state: ",new_state)
-        current_reward = new_state.reward
+        current_state = self.task.get_current_state()
+        #print("Current state: ", current_state.to_string())
+        new_state, action_index = policy.get_action(current_state, self.task)
+        #print("New state: ", new_state.to_string())
+        current_reward = new_state.get_reward()
         episode_reward += current_reward
-        #print("Current reward: ", current_reward
-        policy.update_q_table(self.current_state_index, action_index, new_state_index, current_reward)
+        #print("Current reward: ", current_reward)
+        policy.update_q_table(current_state, new_state, current_reward, action_index)
         stop = False
-        if new_state_index in self.terminal_states:
-            print("BREAK")
+        if new_state in self.task.terminal_states:
             self.terminal_state_cb()
             stop = True
-        self.current_state_index = new_state_index
-        print("===================================")
+        self.task.set_current_state(new_state)
         return num_steps, stop, episode_reward
 
     def terminal_state_cb(self):
+        #self.arm.home_arm()
         pass
 
     def reset(self):
-        self.arm.home_arm()
-        self.current_state_index = 0
+        #self.arm.home_arm()
+        self.current_state = self.task.reset()
 
 class QTablePolicy:
-    def __init__(self, num_states, num_actions, total_episodes=10):
-        self._total_episodes = total_episodes
-        self.q_table = np.zeros((num_states, num_actions))
-        self.total_episodes = 10
-        self.steps_per_episode = 10
-        self.exploration_rate = 0.7
-        self.exploration_decay = 0.01
-        self.discount_factor = 0.9
-        self.learning_rate = 0.7
+
+    def __init__(self, states, actions_length, total_episodes = 10, steps_per_episode = 10, exploration_rate = 0.7, exploration_decay = 0.01, discount_factor = 0.9, learning_rate = 0.7):
+        self.q_table = {}
+        self.total_episodes = total_episodes
+        self.steps_per_episode = steps_per_episode
+        self.exploration_rate = exploration_rate
+        self.exploration_decay = exploration_decay
+        self.discount_factor = discount_factor
+        self.learning_rate = learning_rate
         self.end_episode = False
+        self.states = states
+        for state in states:
+            self.q_table[state] = np.zeros(actions_length)
 
     def learn_task(self, env):
         for episode in range(self.total_episodes):
@@ -70,18 +63,21 @@ class QTablePolicy:
                 if stop:
                     print("BREAK")
                     break
+            print("===================================")
             print("Episode reward: ", episode_reward)
             print("Num steps: ", num_steps)
         print("||||||||||||||||||||||||||||||||||")
         self.exploration_rate *= (1 - self.exploration_decay)
-        print(self.q_table)
+        for i in range(len(self.states)):
+            if (self.states[i] in self.q_table.keys()):
+                print("State ", str(i),": ", self.q_table[self.states[i]])
     
-    def get_action(self, state_index, states, arm):
-        # returns the state number and action index
-        # assuming states is a dict mapping state_index : state() objects
+    def get_action(self, state, task):
+        # returns the state and action index
         check_explore = rm.uniform(0, 1)
-        possible_actions = states[state_index].actions
-        print("Possible actions", possible_actions)
+        # assumes that possible_actions is a list of action indices corresponding to the 
+        # actions list in task
+        possible_actions = state.get_action_indices()
         if (check_explore < self.exploration_rate):
             action_index = rm.choice(possible_actions)
         else:
@@ -89,21 +85,23 @@ class QTablePolicy:
             ind = 0
             index_of_highest = 0
             for action_index in possible_actions: 
-                print("Q table val", self.q_table[state_index, action_index])
-                if (max_val < self.q_table[state_index, action_index]):
-                    max_val = self.q_table[state_index, action_index]
+                if (max_val < self.q_table[state][action_index]):
+                    max_val = self.q_table[state][action_index]
                     index_of_highest = ind
                 ind += 1
             action_index = possible_actions[index_of_highest]
-        new_state_index = action.Action.ALL[action_index].execute(arm)
-        return new_state_index, action_index
+        new_state = task.take_action(self.states, action_index, "arm")
+        task.set_current_state(new_state)
+        # print("New state: ", str(new_state))
+        return new_state, action_index
     
-    def update_q_table(self, state_index, action_index, new_state_index, reward):
-        print("State index", state_index)
-        print("action index", action_index)
-        self.q_table[state_index, action_index] = self.q_table[state_index, action_index] * \
+    def update_q_table(self, state, new_state, reward, action_index):
+        # ASSUME THAT THE Q TABLE HAS AT LEAST ONE ENTRY
+        if new_state not in self.q_table.keys(): 
+            self.q_table[new_state] = np.zeros(len(self.q_table[0]))
+        self.q_table[state][action_index] = self.q_table[state][action_index] * \
             (1 - self.learning_rate) + self.learning_rate * (reward + self.discount_factor * \
-            np.max(self.q_table[new_state_index, :]))
+            np.max(self.q_table[new_state]))
 
 
 
@@ -111,7 +109,7 @@ class QTablePolicy:
 
 if __name__=="__main__":
     env = Environment(robot.Robot())
-    current_policy = QTablePolicy(len(env.states), len(env.actions))
+    current_policy = QTablePolicy(env.states, env.actions_length)
     current_policy.learn_task(env)
     
     

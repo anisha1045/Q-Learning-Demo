@@ -1,5 +1,5 @@
 import numpy as np
-import gridtemplate
+import move_cup.gridtemplate as gridtemplate
 import random as rm
 import armpy
 import rospy

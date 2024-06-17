@@ -17,40 +17,40 @@ class Action:
     def name(self):
         return self._name
 
-    def execute(self, arm):
-        return self._do(arm)
+    def execute(self, states, arm):
+        return self._do(states, arm)
 
 # Decorators to create Action instances with specific behaviors
 
 @Action.make()
-def up_0(arm):
+def up_0(states, arm):
       #arm.goto_cartesian_pose(x,y,z) # go to item0 
       #arm.goto_cartesian_pose(x,y,z) # pick up item0
       print("Moving item0 up")
-      return 1
+      return states[1]
   
 @Action.make()
-def up_1(arm):
+def up_1(states, arm):
     #arm.goto_cartesian_pose(x,y,z) # go to item1
     #arm.goto_cartesian_pose(x,y,z) # pick up item1
     print("Moving item1 up")
-    return 3
+    return states[3]
 
 @Action.make()
-def right(arm):
+def right(states, arm):
     #arm.goto_cartesian_pose(x,y,z)
     print("Moving right")
-    return 2
+    return states[2]
 
 @Action.make()
-def left(arm):
+def left(states, arm):
     #arm.goto_cartesian_pose(x,y,z)
     print("Moving left")
-    return 4
+    return states[4]
 
 @Action.make()
-def down(arm):
+def down(states, arm):
     #arm.goto_cartesian_pose(x,y,z)
     print("Moving down")
-    return 0
+    return states[0]
 
