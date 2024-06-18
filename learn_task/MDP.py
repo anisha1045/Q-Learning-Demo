@@ -5,9 +5,9 @@ import task
 
 class Environment:
     
-    def __init__(self, arm):
+    def __init__(self, arm, task):
         self.arm = arm
-        self.task = task.Task_Stack()
+        self.task = task
         self.states = self.task.get_states()
         self.actions_length = self.task.get_actions_length()
         
@@ -49,7 +49,7 @@ class QTablePolicy:
         self.learning_rate = learning_rate
         self.end_episode = False
         self.states = states
-        for state in states:
+        for state in states.values():
             self.q_table[state] = np.zeros(actions_length)
 
     def learn_task(self, env):
@@ -69,8 +69,8 @@ class QTablePolicy:
         print("||||||||||||||||||||||||||||||||||")
         self.exploration_rate *= (1 - self.exploration_decay)
         for i in range(len(self.states)):
-            if (self.states[i] in self.q_table.keys()):
-                print("State ", str(i),": ", self.q_table[self.states[i]])
+            if (list(self.states.values())[i] in self.q_table.keys()):
+                print("State ", str(i),": ", self.q_table[list(self.states.values())[i]])
     
     def get_action(self, state, task):
         # returns the state and action index
@@ -108,7 +108,9 @@ class QTablePolicy:
         
 
 if __name__=="__main__":
-    env = Environment(robot.Robot())
+    task = task.Task_Stack()
+    #task = task.Task_Move(3)
+    env = Environment(robot.Robot(), task)
     current_policy = QTablePolicy(env.states, env.actions_length)
     current_policy.learn_task(env)
     

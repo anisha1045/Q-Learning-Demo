@@ -1,7 +1,7 @@
 
 class State:
-    def __init__(self, actions = [], reward = 0, *args, **kwargs):
-        self.description = args if args else kwargs
+    def __init__(self, actions = [], reward = 0, *args):
+        self.description = args
         # must contain all possible actions
         self.actions = actions
         self.reward = reward

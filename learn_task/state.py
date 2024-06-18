@@ -1,9 +1,9 @@
 
 class State:
-    def __init__(self, actions = [], reward = 0, location = []):
-        #self.description = args if args else kwargs
+    def __init__(self, actions = [], reward = 0, *args, **kwargs):
+        self.desc = args if args else kwargs
         # contains the indices of possible actions
-        self.description = location
+        #self.description = location
         self.action_indices = actions
         self.reward = reward
 
@@ -14,4 +14,4 @@ class State:
         return self.action_indices
     
     def to_string(self):
-        return str(self.description) 
+        return str(self.desc) 
