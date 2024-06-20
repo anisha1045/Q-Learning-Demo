@@ -29,7 +29,7 @@ class Task(ABC):
     def take_action(self, states, action_index, arm):
         pass
 
-    def reset(self):
+    def reset(self, arm):
         self.current_state = self.initial_state
         return self.current_state
         
@@ -45,17 +45,16 @@ class Task_Stack(Task):
                    ((4, 0, 0), (0, 0, 0)) : state.State(actions = [], reward = 10, location=((0, 0, 0), (0, 0, 0)))}
         self.terminal_states = self.states[((2, 0, 0), (0, 0, 0))], self.states[((4, 0, 0), (0, 0, 0))]
         self.initial_state = self.current_state = self.states[((0, 0, 0), (0, 0, 0))]
-        #self.arm = arm
+
 
     def take_action(self, states, action_index, arm):
         action = self.actions[action_index]
         #print("Action in task: ", action)
         return action.execute(states, arm)
 
-    def reset(self):
-        # self.arm.goto_cartesian_pose()
-        # tell the robot to go to the start position
-        super().reset()
+    def reset(self, arm):
+        super().reset(arm)
+        
 
     
 class Task_Move(Task):
@@ -92,15 +91,16 @@ class Task_Move(Task):
     def take_action(self, states, action_index, arm):
         action = self.actions[action_index]
         #print("Action in task: ", action)
-        return action.execute(states, self.current_state, arm)
+        return action.execute(states, self.current_state, self.distance_delta, arm)
 
-    def reset(self):
+    def reset(self, arm):
         #self.arm.home_arm()
         self.x_start = 0.06
         self.y_start = -0.27
         self.z_start = -0.44
-        #self.arm.goto_cartesian_pose_old([self.x_start, self.y_start, self.z_start, 0.0, 0.0, 0.0, 1], relative = True)
-        super().reset()
+        arm.goto_cartesian_pose(self.x_start, self.y_start, self.z_start)
+        arm.close_gripper()
+        super().reset(arm)
         
 '''
 class Task_Sort(Task):

@@ -16,7 +16,7 @@ class Environment:
         num_steps += 1
         current_state = self.task.get_current_state()
         #print("Current state: ", current_state.to_string())
-        new_state, action_index = policy.get_action(current_state, self.task)
+        new_state, action_index = policy.get_action(current_state, self.task, self.arm)
         #print("New state: ", new_state.to_string())
         current_reward = new_state.get_reward()
         episode_reward += current_reward
@@ -30,12 +30,12 @@ class Environment:
         return num_steps, stop, episode_reward
 
     def terminal_state_cb(self):
-        #self.arm.home_arm()
+        self.arm.open_gripper()
+        self.arm.home_arm()
         pass
 
     def reset(self):
-        #self.arm.home_arm()
-        self.current_state = self.task.reset()
+        self.current_state = self.task.reset(self.arm)
 
 class QTablePolicy:
 
@@ -72,7 +72,7 @@ class QTablePolicy:
             if (list(self.states.values())[i] in self.q_table.keys()):
                 print("State ", str(i),": ", self.q_table[list(self.states.values())[i]])
     
-    def get_action(self, state, task):
+    def get_action(self, state, task, arm):
         # returns the state and action index
         check_explore = rm.uniform(0, 1)
         # assumes that possible_actions is a list of action indices corresponding to the 
@@ -90,7 +90,7 @@ class QTablePolicy:
                     index_of_highest = ind
                 ind += 1
             action_index = possible_actions[index_of_highest]
-        new_state = task.take_action(self.states, action_index, "arm")
+        new_state = task.take_action(self.states, action_index, arm)
         task.set_current_state(new_state)
         # print("New state: ", str(new_state))
         return new_state, action_index
