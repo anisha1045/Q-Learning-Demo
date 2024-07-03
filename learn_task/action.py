@@ -87,37 +87,37 @@ class TaskMoveActions(Action):
             return cls(behavior)
         return make_action
 
-    def execute(self, states, state, distance_delta, arm):
-        return self._do(states, state, distance_delta, arm)
+    def execute(self, states, state, distance_delta):
+        return self._do(states, state, distance_delta)
 
 @TaskMoveActions.make_task_move_action()
-def up(states, state, distance_delta, arm):
+def up(states, state, distance_delta):
     new_row = state.desc[0] - 1
     new_col = state.desc[1]
     print("UP")
-    arm.goto_cartesian_pose(0, -distance_delta, 0)
+    #arm.goto_cartesian_pose(0, -distance_delta, 0)
     return states[(new_row, new_col)]
 
 @TaskMoveActions.make_task_move_action()
-def down(states, state, distance_delta, arm):
+def down(states, state, distance_delta):
     new_row = state.desc[0] + 1
     new_col = state.desc[1]
     print("DOWN")
-    arm.goto_cartesian_pose(0, distance_delta, 0)
+    #arm.goto_cartesian_pose(0, distance_delta, 0)
     return states[(new_row, new_col)]
 
 @TaskMoveActions.make_task_move_action()
-def left(states, state, distance_delta, arm):
+def left(states, state, distance_delta):
     new_row = state.desc[0]
     new_col = state.desc[1] - 1
     print("LEFT")
-    arm.goto_cartesian_pose(distance_delta, 0, 0)
+    #arm.goto_cartesian_pose(distance_delta, 0, 0)
     return states[(new_row, new_col)]
 
 @TaskMoveActions.make_task_move_action()
-def right(states, state, distance_delta,  arm):
+def right(states, state, distance_delta):
     new_row = state.desc[0]
     new_col = state.desc[1] + 1
-    arm.goto_cartesian_pose(-distance_delta, 0, 0)
+    #arm.goto_cartesian_pose(-distance_delta, 0, 0)
     print("RIGHT")
     return states[(new_row, new_col)]
