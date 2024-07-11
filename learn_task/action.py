@@ -96,7 +96,7 @@ def up(states, state, distance_delta):
     new_col = state.desc[1]
     print("UP")
     #arm.goto_cartesian_pose(0, -distance_delta, 0)
-    return states[(new_row, new_col)]
+    return (new_row, new_col)
 
 @TaskMoveActions.make_task_move_action()
 def down(states, state, distance_delta):
@@ -104,7 +104,7 @@ def down(states, state, distance_delta):
     new_col = state.desc[1]
     print("DOWN")
     #arm.goto_cartesian_pose(0, distance_delta, 0)
-    return states[(new_row, new_col)]
+    return (new_row, new_col)
 
 @TaskMoveActions.make_task_move_action()
 def left(states, state, distance_delta):
@@ -112,7 +112,7 @@ def left(states, state, distance_delta):
     new_col = state.desc[1] - 1
     print("LEFT")
     #arm.goto_cartesian_pose(distance_delta, 0, 0)
-    return states[(new_row, new_col)]
+    return (new_row, new_col)
 
 @TaskMoveActions.make_task_move_action()
 def right(states, state, distance_delta):
@@ -120,4 +120,4 @@ def right(states, state, distance_delta):
     new_col = state.desc[1] + 1
     #arm.goto_cartesian_pose(-distance_delta, 0, 0)
     print("RIGHT")
-    return states[(new_row, new_col)]
+    return (new_row, new_col)

@@ -67,22 +67,20 @@ class Task_Many_Goals(Task):
                     # we can't move right
                     possible_actions.remove(3)
                 self.states[(i, j)] = state.State(possible_actions, -1, i, j)
+        self.initial_coordinates = (0, grid_dim // 2)
+        self.initial_state = self.current_state = self.states[self.initial_coordinates]
+        self.grid = grid.Grid(grid_dim, self.initial_coordinates)
         self.goal_reward = 10
-        '''bob = state.State(actions = [0, 1], reward = -1, location=((0, 0, 0), (0, 0, 0)))
-        print(type(bob))
-        print(bob.reward)
-        print(hasattr(bob, 'get_reward()'))
-        print(bob.description) '''
-        self.states[(grid_dim - 1, grid_dim - 1)].set_reward(self.goal_reward)
-        self.states[(grid_dim - 1, 0)].set_reward(self.goal_reward)
+        self.goals = [(grid_dim - 1, 0), (grid_dim - 1, grid_dim - 1)]
+        for goal in self.goals:
+            self.states[goal].set_reward(self.goal_reward)
+            self.grid.plot_reward(goal)
         self.distance_delta = 0.1
         self.terminal_states = []
+        self.last_episode = False
         self.x_start = 0.06
         self.y_start = -0.27
         self.z_start = -0.44
-        self.initial_coordinates = (0, grid_dim // 2)
-        self.initial_state = self.current_state = self.states[self.initial_coordinates]
-        self.grid = grid.Grid(grid_dim)
         #self.arm = arm
 
     @property
@@ -110,6 +108,9 @@ class Task_Many_Goals(Task):
     def get_initial_state(self):
         return self.initial_state
     
+    def change_last_episode(self):
+        self.last_episode = True
+    
     def choose_terminal(self):
         if (len(self.terminal_states) >= 1):
             return random.choice(self.terminal_states)
@@ -122,7 +123,14 @@ class Task_Many_Goals(Task):
     def take_action(self, states, action_index):
         action = self.actions[action_index]
         #print("Action in task: ", action)
-        return action.execute(states, self.current_state, self.distance_delta)
+        result_state = action.execute(states, self.current_state, self.distance_delta)
+        if (self.last_episode):
+            self.grid.plot_traj(result_state)
+            self.grid.show_plot()
+        return self.states[result_state]
+    
+    def show_plot(self):
+        self.grid.end()
 
     def reset(self):
         #self.arm.home_arm()
@@ -190,7 +198,7 @@ class Task_Move(Task):
     def take_action(self, states, action_index, arm):
         action = self.actions[action_index]
         #print("Action in task: ", action)
-        return action.execute(states, self.current_state, self.distance_delta, arm)
+        return self.states[action.execute(states, self.current_state, self.distance_delta, arm)]
 
     def reset(self, arm):
         #self.arm.home_arm()
