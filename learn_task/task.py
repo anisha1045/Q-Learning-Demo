@@ -3,6 +3,7 @@ import action
 import state
 import random
 import grid
+import test
 
 class Task(ABC):
 
@@ -35,7 +36,7 @@ class Task(ABC):
         return True
     
     @abstractmethod
-    def take_action(self, states, action_index, arm):
+    def take_action(self, **kwargs):
         pass
 
     def get_terminal_states(self):
@@ -46,7 +47,7 @@ class Task(ABC):
         return self.current_state
         
 class Task_Many_Goals(Task):
-    def __init__(self, grid_dim):
+    def __init__(self, grid_dim, start_state, end_states, test_mode = False):
         self.actions = action.TaskMoveActions.ALL
         print("Task Actions List: ", self.actions)
         self.grid_dim = grid_dim # can change for any grid dimension
@@ -67,11 +68,14 @@ class Task_Many_Goals(Task):
                     # we can't move right
                     possible_actions.remove(3)
                 self.states[(i, j)] = state.State(possible_actions, -1, i, j)
-        self.initial_coordinates = (0, grid_dim // 2)
+        # start_state and end_states must be tuples
+        self.initial_coordinates = start_state
         self.initial_state = self.current_state = self.states[self.initial_coordinates]
-        self.grid = grid.Grid(grid_dim, self.initial_coordinates)
+        self.test_mode = test_mode
+        if (test_mode):
+            self.grid = grid.Grid(grid_dim, self.initial_coordinates)
         self.goal_reward = 10
-        self.goals = [(grid_dim - 1, 0), (grid_dim - 1, grid_dim - 1)]
+        self.goals = end_states
         for goal in self.goals:
             self.states[goal].set_reward(self.goal_reward)
             self.grid.plot_reward(goal)
@@ -81,11 +85,13 @@ class Task_Many_Goals(Task):
         self.x_start = 0.06
         self.y_start = -0.27
         self.z_start = -0.44
+        self.test = test.Test(self.states, self.initial_coordinates, self.goals, grid_dim, self.actions)
         #self.arm = arm
 
     @property
     def get_goal_reward(self):
         return self.goal_reward
+    
     
     # tells us whether we are in a terminal state and if we are,
     # whether we know about this goal or not
@@ -96,10 +102,6 @@ class Task_Many_Goals(Task):
             stop = True
             # we check if the new state is a new terminal state or if we've seen it before
             new = super().check_new_terminal(new_state)
-            if (new == True):
-                print('NEW IS TRUE.')
-            else:
-                print('NEW IS NOT TRUE.')
         return stop, new
 
     def get_initial_tuple(self):
@@ -120,17 +122,19 @@ class Task_Many_Goals(Task):
     def add_terminal(self, new_state):
         self.terminal_states.append(new_state)
 
-    def take_action(self, states, action_index):
+    def take_action(self, action_index):
         action = self.actions[action_index]
         #print("Action in task: ", action)
-        result_state = action.execute(states, self.current_state, self.distance_delta)
-        if (self.last_episode):
+        result_state = action.execute(self.current_state, self.distance_delta)
+        # HERE WE SHOW THE PLOT STUFF
+        if (self.last_episode and not self.test_mode):
             self.grid.plot_traj(result_state)
             self.grid.show_plot()
-        return self.states[result_state]
+        return self.states[result_state], result_state
     
     def show_plot(self):
-        self.grid.end()
+        if (not self.test_mode):
+            self.grid.end()
 
     def reset(self):
         #self.arm.home_arm()
@@ -156,7 +160,6 @@ class Task_Stack(Task):
 
     def take_action(self, states, action_index, arm):
         action = self.actions[action_index]
-        #print("Action in task: ", action)
         return action.execute(states, arm)
 
     def reset(self, arm):

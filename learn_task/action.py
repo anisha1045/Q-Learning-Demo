@@ -17,8 +17,8 @@ class Action:
     def name(self):
         return self._name
 
-    def execute(self, states, arm):
-        return self._do(states, arm)
+    def execute(self, arm):
+        return self._do(arm)
         
 
 # Decorators to create Action instances with specific behaviors
@@ -36,6 +36,9 @@ class TaskStackActions(Action):
         def make_action(behavior):
             return cls(behavior)
         return make_action
+
+    def execute(self, states, arm):
+        return self._do(states, arm)
 
 @TaskStackActions.make_task_stack_action()
 def up_0(states, arm):
@@ -87,11 +90,11 @@ class TaskMoveActions(Action):
             return cls(behavior)
         return make_action
 
-    def execute(self, states, state, distance_delta):
-        return self._do(states, state, distance_delta)
+    def execute(self, state, distance_delta):
+        return self._do(state, distance_delta)
 
 @TaskMoveActions.make_task_move_action()
-def up(states, state, distance_delta):
+def up(state, distance_delta):
     new_row = state.desc[0] - 1
     new_col = state.desc[1]
     print("UP")
@@ -99,7 +102,7 @@ def up(states, state, distance_delta):
     return (new_row, new_col)
 
 @TaskMoveActions.make_task_move_action()
-def down(states, state, distance_delta):
+def down(state, distance_delta):
     new_row = state.desc[0] + 1
     new_col = state.desc[1]
     print("DOWN")
@@ -107,7 +110,7 @@ def down(states, state, distance_delta):
     return (new_row, new_col)
 
 @TaskMoveActions.make_task_move_action()
-def left(states, state, distance_delta):
+def left(state, distance_delta):
     new_row = state.desc[0]
     new_col = state.desc[1] - 1
     print("LEFT")
@@ -115,7 +118,7 @@ def left(states, state, distance_delta):
     return (new_row, new_col)
 
 @TaskMoveActions.make_task_move_action()
-def right(states, state, distance_delta):
+def right(state, distance_delta):
     new_row = state.desc[0]
     new_col = state.desc[1] + 1
     #arm.goto_cartesian_pose(-distance_delta, 0, 0)
