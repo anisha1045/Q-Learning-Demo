@@ -15,11 +15,22 @@ class PolicyShape():
         self.terminal_states = {}
         # dictionary mapping all states to their minimum number of steps from start to end for each terminal state in a list
         self.optimal_steps = np.empty((grid_dim, grid_dim, 0))
+        self.grid_dim = grid_dim
         self.start = start
         self.index = 0
         self.default_legibility = 1
         if (len(self.terminal_states)) >= 2:
             self.default_legibility = 1 / len(self.terminal_states)
+
+    def reset(self):
+        for key in self.states.keys():
+            self.feedback_table[key] = np.full(self.actions_length, None)
+        self.terminal_states = {}
+        # dictionary mapping all states to their minimum number of steps from start to end for each terminal state in a list
+        self.optimal_steps = np.empty((self.grid_dim, self.grid_dim, 0))
+        self.index = 0
+        self.default_legibility = 1
+
 
     def get_weight(self, terminal_state, step_num):
         return self.get_opt_from_start(terminal_state) - step_num
@@ -38,6 +49,10 @@ class PolicyShape():
 
     def update_feedback(self, state, action_index, new_state):
         self.feedback_table[state][action_index] = new_state
+        print("FEEDBACK TABLE: ")
+        for state in self.feedback_table:
+            print("State: ", state, state.desc)
+            print(self.feedback_table[state])
 
     def propagate_opt_steps(self, new_state, terminal_state, stop, states_queue, old_opt_steps, traj_steps, index_best):
         new_opt_steps = self.get_opt_steps(new_state, terminal_state)
@@ -80,10 +95,12 @@ class PolicyShape():
     # returns a legibility score that is not normalized
     # does not account for TIME (earlier, more legible, etc.)
     def get_legibility_score(self, state, action_index, terminal_state, num_steps):
-        if (self.feedback_table[state][action_index] == terminal_state or terminal_state == None):
+        if (self.feedback_table[state][action_index] == terminal_state and terminal_state != None):
             return 1, True
         elif (self.get_feedback(state, action_index) == None):
             return -1, False
+        elif (terminal_state == None):
+            return -1, True
         legibility = 0
         denom = 0
         for end_goal in self.terminal_states:

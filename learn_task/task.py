@@ -42,12 +42,12 @@ class Task(ABC):
     def get_terminal_states(self):
         return self.terminal_states
 
-    def reset(self):
+    def ep_reset(self):
         self.current_state = self.initial_state
         return self.current_state
         
 class Task_Many_Goals(Task):
-    def __init__(self, grid_dim, start_state, end_states, test_mode = False):
+    def __init__(self, grid_dim, start_state, end_states, num_learns, test_mode = False):
         self.actions = action.TaskMoveActions.ALL
         print("Task Actions List: ", self.actions)
         self.grid_dim = grid_dim # can change for any grid dimension
@@ -72,20 +72,21 @@ class Task_Many_Goals(Task):
         self.initial_coordinates = start_state
         self.initial_state = self.current_state = self.states[self.initial_coordinates]
         self.test_mode = test_mode
-        if (test_mode):
+        if (not test_mode):
             self.grid = grid.Grid(grid_dim, self.initial_coordinates)
         self.goal_reward = 10
         self.goals = end_states
         for goal in self.goals:
             self.states[goal].set_reward(self.goal_reward)
-            self.grid.plot_reward(goal)
+            if (not test_mode):
+                self.grid.plot_reward(goal)
         self.distance_delta = 0.1
         self.terminal_states = []
         self.last_episode = False
         self.x_start = 0.06
         self.y_start = -0.27
         self.z_start = -0.44
-        self.test = test.Test(self.states, self.initial_coordinates, self.goals, grid_dim, self.actions)
+        self.test = test.Test(self.states, self.initial_coordinates, self.goals, grid_dim, self.actions, num_learns)
         #self.arm = arm
 
     @property
@@ -113,6 +114,9 @@ class Task_Many_Goals(Task):
     def change_last_episode(self):
         self.last_episode = True
     
+    def get_test_mode(self):
+        return self.test_mode
+
     def choose_terminal(self):
         if (len(self.terminal_states) >= 1):
             return random.choice(self.terminal_states)
@@ -136,14 +140,19 @@ class Task_Many_Goals(Task):
         if (not self.test_mode):
             self.grid.end()
 
-    def reset(self):
+    def ep_reset(self):
         #self.arm.home_arm()
         self.x_start = 0.06
         self.y_start = -0.27
         self.z_start = -0.44
         #arm.goto_cartesian_pose(self.x_start, self.y_start, self.z_start)
         #arm.close_gripper()
-        super().reset()
+        super().ep_reset()
+
+    # at the beginning of every learning phase, reset the number of terminal states known and the list of terminal states
+    def learn_reset(self):
+        self.test.reset()
+        self.terminal_states = []
 
 class Task_Stack(Task):
     def __init__(self):
@@ -162,8 +171,8 @@ class Task_Stack(Task):
         action = self.actions[action_index]
         return action.execute(states, arm)
 
-    def reset(self, arm):
-        super().reset(arm)
+    def ep_reset(self, arm):
+        super().ep_reset(arm)
         
 
     
@@ -203,14 +212,14 @@ class Task_Move(Task):
         #print("Action in task: ", action)
         return self.states[action.execute(states, self.current_state, self.distance_delta, arm)]
 
-    def reset(self, arm):
+    def ep_reset(self, arm):
         #self.arm.home_arm()
         self.x_start = 0.06
         self.y_start = -0.27
         self.z_start = -0.44
         arm.goto_cartesian_pose(self.x_start, self.y_start, self.z_start)
         arm.close_gripper()
-        super().reset(arm)
+        super().ep_reset(arm)
         
 '''
 class Task_Sort(Task):

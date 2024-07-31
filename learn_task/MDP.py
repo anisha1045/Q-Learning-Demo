@@ -3,9 +3,8 @@ import random as rm
 #import robot
 import task
 import policyshape
-from abc import ABC, abstractmethod
 
-
+''' Problems: q tables are not printing  gasp and optimal steps table is ALL WRONG'''
 class Environment:
     
     def __init__(self, task):
@@ -33,29 +32,31 @@ class Environment:
         pass
 
     def reset(self):
-        self.current_state = self.task.reset()
+        self.current_state = self.task.ep_reset()
     
-#class QTablePolicy(ABC):
-
-    #def __init__(self): 
-# Allows for multiple terminal states and implements policy shaping
-class ModQTablePolicy:
-
-    def __init__(self, states, actions_length, start, grid_dim, total_episodes = 100, steps_per_episode = 10, exploration_rate = 0.7, exploration_decay = 0.01, discount_factor = 0.9, learning_rate = 0.7):
+class OrigQTablePolicy():
+    # here, we still choose a goal, but we don't do anything with legibility
+    def __init__(self, states, actions_length, total_episodes = 50, steps_per_episode = 15, exploration_rate = 0.7, exploration_decay = 0.01, discount_factor = 0.9, learning_rate = 0.7):
         self.q_table = {}
         self.q_tables = {}
         self.actions_length = actions_length
+        print("ORIG TOTAL EPISODES: ", total_episodes)
         self.total_episodes = total_episodes
         self.steps_per_episode = steps_per_episode
-        self.exploration_rate = exploration_rate
+        self.orig_exp_rate = self.exploration_rate = exploration_rate
         self.exploration_decay = exploration_decay
         self.discount_factor = discount_factor
         self.learning_rate = learning_rate
-        self.end_episode = False
         self.states = states
         self.num_steps = 0
-        self.legib = policyshape.PolicyShape(states, actions_length, start, grid_dim)
         self.terminal_state = None
+
+    def reset_q_object_info(self):
+        self.q_table = {}
+        self.q_tables = {}
+        self.terminal_state = None
+        self.exploration_rate = self.orig_exp_rate
+        
 
     def create_q_table(self):
         new_q = {}
@@ -64,12 +65,46 @@ class ModQTablePolicy:
         self.q_table = new_q
         return new_q
 
-    def get_action_prob(self):
-        pass
-
-
+    # here is where we implement policy shaping
+    def get_action(self, state, task):
+        # returns the state and action index
+        check_explore = rm.uniform(0, 1)
+        # assumes that possible_actions is a list of action indices corresponding to the 
+        # actions list in task
+        possible_actions = state.get_action_indices()
+        print("Possible actions", possible_actions)
+        exploit = False
+        if (check_explore < self.exploration_rate):            
+            print("EXPLORING")
+            action_index = rm.choice(possible_actions)
+        else:
+            exploit = True
+            print("EXPLOITING")
+            max_val = 0
+            ind = 0
+            index_of_highest = 0
+            for action_index in possible_actions: 
+                print("Q table val: ", self.q_table[state][action_index])
+                if (max_val < self.q_table[state][action_index]):
+                    max_val = self.q_table[state][action_index]
+                    index_of_highest = ind
+                ind += 1
+            action_index = possible_actions[index_of_highest]
+        print("CHOSEN ACTION INDEX: ", action_index)
+        new_state, tuple = task.take_action(action_index)
+        task.set_current_state(new_state)
+        known_terminal = len(env.task.get_terminal_states())
+        if (task.get_test_mode()):
+            print("TEST MODE IS TRUE.")
+            print("Num known: ", known_terminal)
+            task.test.run_tests(exploit, tuple, self.num_steps - 1, self.terminal_state, known_terminal)
+        print("New state: ", new_state.desc)
+        return new_state, action_index
+    
     def learn_task(self, env):
+        self.reset_q_object_info()
         self.create_q_table()
+        env.task.learn_reset()
         for episode in range(self.total_episodes):   
             episode_reward = 0
             self.num_steps = 0
@@ -80,6 +115,189 @@ class ModQTablePolicy:
             old_opt_steps = -1
             traj_steps = 0
             index_best = -1
+            print("Initial state: ", current_state.desc)
+            if (episode == self.total_episodes - 1):
+                env.task.change_last_episode()
+            # choose a terminal state if we have seen at least one before
+            if (len(env.task.get_terminal_states()) >= 1):
+                self.terminal_state = env.task.choose_terminal()
+                self.q_table = self.q_tables[self.terminal_state]
+                states_queue = []
+                print("Chosen goal: ", self.terminal_state.desc)
+            for step in range(self.steps_per_episode):
+                self.num_steps, stop, episode_reward, new_state = env.step(self.num_steps, self, episode_reward)
+                # add the state action pair to the q,
+                states_queue.append(current_state)
+                if stop:
+                    break 
+                current_state = new_state
+                traj_steps += 1
+            if (env.task.get_test_mode()):
+                env.task.test.learning_test(episode_reward, self.num_steps, episode, len(env.task.get_terminal_states()))
+            self.exploration_rate *= (1 - self.exploration_decay)
+            print("===================================")
+            print("Episode reward: ", episode_reward)
+            print("Num steps: ", self.num_steps)
+            self.num_steps = 0
+        print("||||||||||||||||||||||||||||||||||")
+        if (not env.task.get_test_mode()):
+            env.task.show_plot()
+        print(len(env.task.get_terminal_states()))
+        print("PRINTING Q TABLES")
+        self.print_q_tables()
+
+    def update_q_table(self, state, new_state, reward, action_index, new = False):
+        ''' If we reach a new terminal state, make a new q table and do it
+            If we reach a terminal state that is DIFFERENT from our current terminal state,
+            set self.q table to be that one
+            Then, we set the reward to be -1 for the other terminal states'''
+        # ASSUME THAT THE Q TABLE HAS AT LEAST ONE ENTRY
+        # if we are at an unknown terminal state and this is not the first terminal state, make a new q table for it
+        # and add it to the dictionary of q tables 
+        if (new == True):
+            print("Action Index: ", action_index)
+            # Creating new q tables 
+            if (len(self.q_tables.keys()) != 0):
+                self.create_q_table() 
+                print("CREATING Q TABLE FOR NEW STATE: ", new_state.desc)
+            self.q_tables[new_state] = self.q_table
+        elif (new_state in self.q_tables and new_state != self.terminal_state):
+            self.q_table = self.q_tables[new_state]
+        self.q_table[state][action_index] = self.q_table[state][action_index] * (1 - self.learning_rate) + self.learning_rate * (reward + self.discount_factor * \
+                np.max(self.q_table[new_state]))
+        # We don't want the reward from a goal to interfere with the q table of another goal
+        if (reward == 10):
+            reward = -1
+        # updating all q tables at the same time 
+        for q_table in self.q_tables.values():
+            if (id(q_table) != id(self.q_table)):
+                q_table[state][action_index] = q_table[state][action_index] * \
+                    (1 - self.learning_rate) + self.learning_rate * (reward + self.discount_factor * \
+                    np.max(q_table[new_state]))
+        
+    # for debugging purposes
+    def print_q_tables(self):
+        for state_key in self.q_tables.keys():
+            print("Q Table: ", state_key.desc)
+            current_q = self.q_tables[state_key]
+            for key in current_q.keys():
+                    print("State ", key.desc,": ", current_q[key])
+
+                    
+# Allows for multiple terminal states and implements policy shaping
+class ModQTablePolicy(OrigQTablePolicy):
+    def __init__(self, states, actions_length, start, grid_dim, total_episodes = 100, steps_per_episode = 7, exploration_rate = 0.7, exploration_decay = 0.01, discount_factor = 0.9, learning_rate = 0.7):
+        super().__init__(states, actions_length, total_episodes, steps_per_episode, exploration_rate, exploration_decay, discount_factor, learning_rate)
+        self.legib = policyshape.PolicyShape(self.states, self.actions_length, start, grid_dim)
+
+    def reset_q_object_info(self):
+        self.legib.reset()
+        super().reset_q_object_info()
+
+ # here is where we implement policy shaping
+    def get_action(self, state, task):
+        # returns the state and action index
+        check_explore = rm.uniform(0, 1)
+        # assumes that possible_actions is a list of action indices corresponding to the 
+        # actions list in task
+        possible_actions = state.get_action_indices()
+        # 2d array that stores probability of an action and whether the legibility for the new state can be calculated or not
+        action_probs = []
+        denom = 0
+        min = current_index = 0
+        feedback_options = []
+        step_options = []
+        default = self.legib.get_default_legib()
+        for action_index in possible_actions: 
+            # returns -1 as the score if unable to calculate; feedback_avail stores whether feedback for that state action pair is available
+            prob_action, feedback_avail = self.legib.get_legibility_score(state, action_index, self.terminal_state, self.num_steps)
+            print("Legibility score: ", prob_action)
+            print("Action index: ", action_index)
+            if (prob_action == -1):
+                prob_action = default
+                if (not feedback_avail):
+                    feedback_options.append(action_index)
+                elif (not feedback_options):
+                    step_options.append(action_index)
+            if (self.q_table[state][action_index] != 0):
+                prob_action *= np.exp(self.q_table[state][action_index])
+            denom += prob_action
+            action_probs.append([prob_action, feedback_avail])
+            if (prob_action < action_probs[min][0]):
+                min = current_index
+            current_index += 1
+        unique_values, counts = np.unique([row[0] for row in action_probs], return_counts=True)
+        duplicates = unique_values[counts > 1]
+        smallest_duplicate = -1
+        smallest_duplicate_indices = None
+        if len(duplicates) > 0:
+            smallest_duplicate = np.min(duplicates)
+            largest_duplicate = np.max(duplicates)
+            # Get the indices of this smallest duplicate value
+            smallest_duplicate_indices = np.where([row[0] for row in action_probs] == smallest_duplicate)[0]
+            largest_duplicate_indices = np.where([row[0] for row in action_probs] == largest_duplicate)[0]
+        # normalizing the probabilities
+        for j in range(len(action_probs)):
+            action_probs[j][0] /= denom
+        print("Action probs: ", action_probs)
+        exploit = False
+        # when exploring, we prioritize never been there and unknown optimal steps, then low legibilities 
+        if (check_explore < self.exploration_rate):
+            print("EXPLORING")
+            #action_index = rm.choice(possible_actions)
+            #if we are exploring, we choose an action index based on the following priorities:
+            # 1. there is no feedback state for the state action pair, 2. not all optimal steps are known for this pair
+            # 3. legibility scores are low
+            np.random.seed(10)
+            if (feedback_options):
+                print("choosing based on feedback")
+                action_index = rm.choice(feedback_options)
+            elif (step_options):
+                print("choosing based on optimal steps")
+                action_index = rm.choice(step_options)
+            else:
+                print("choosing based on min legib")
+                if (len(duplicates) > 0):
+                    action_index = possible_actions[rm.choice(smallest_duplicate_indices)]
+                else:
+                    num_action_probs = [item[0] for item in action_probs]
+                    action_index = possible_actions[np.argmin(num_action_probs)]
+        else:
+            exploit = True
+            print("EXPLOITING")
+            if (len(duplicates) > 0):
+                action_index = possible_actions[rm.choice(largest_duplicate_indices)]
+            else: 
+                num_action_probs = [item[0] for item in action_probs]
+                action_index = possible_actions[np.argmax(num_action_probs)]
+            print(possible_actions)
+            print("CHOSEN ACTION INDEX: ", action_index)
+        new_state, tuple = task.take_action(action_index)
+        task.set_current_state(new_state)
+        known_terminal = len(env.task.get_terminal_states())
+        if (task.get_test_mode()):
+            task.test.run_tests(exploit, tuple, self.num_steps - 1, self.terminal_state, known_terminal)
+        print("New state: ", new_state.desc)
+        return new_state, action_index
+    
+
+    def learn_task(self, env):
+        # reset the q tables and the known terminal states 
+        self.reset_q_object_info()
+        self.create_q_table()
+        env.task.learn_reset()
+        for episode in range(self.total_episodes):   
+            print("Total episodes: ", self.total_episodes)
+            episode_reward = 0
+            self.num_steps = 0
+            env.reset()
+            self.terminal_state = None
+            states_queue = []
+            current_state = env.task.get_initial_state()
+            old_opt_steps = -1
+            traj_steps = 0
+            index_best = -1
+            print("Exploration rate: ", self.exploration_rate)
             print("Initial state: ", self.legib.states[current_state])
             if (episode == self.total_episodes - 1):
                 env.task.change_last_episode()
@@ -106,98 +324,20 @@ class ModQTablePolicy:
                 current_state = new_state
                 traj_steps += 1
             print(self.legib.optimal_steps)
+            if (env.task.get_test_mode()):
+                env.task.test.learning_test(episode_reward, self.num_steps, episode, len(env.task.get_terminal_states()))
             self.exploration_rate *= (1 - self.exploration_decay)
             print("===================================")
             print("Episode reward: ", episode_reward)
             print("Num steps: ", self.num_steps)
             self.num_steps = 0
         print("||||||||||||||||||||||||||||||||||")
+        print("Optimal steps table: ")
         print(self.legib.optimal_steps)
-        env.task.show_plot()
+        if (not env.task.get_test_mode()):
+            env.task.show_plot()
+        print("PRINTING Q TABLES")
         self.print_q_tables()
-
-    
-    # here is where we implement policy shaping
-    def get_action(self, state, task):
-        # returns the state and action index
-        check_explore = rm.uniform(0, 1)
-        # assumes that possible_actions is a list of action indices corresponding to the 
-        # actions list in task
-        possible_actions = state.get_action_indices()
-        # 2d array that stores probability of an action and whether the legibility for the new state can be calculated or not
-        action_probs = []
-        denom = 0
-        min = current_index = 0
-        feedback_options = []
-        step_options = []
-        default = self.legib.get_default_legib()
-        for action_index in possible_actions: 
-            # returns -1 as the score if unable to calculate; feedback_avail stores whether feedback for that state action pair is available
-            # the legibility score is the 
-            prob_action, feedback_avail = self.legib.get_legibility_score(state, action_index, self.terminal_state, self.num_steps)
-            print("Legibility score: ", prob_action)
-            print("Action index: ", action_index)
-            if (prob_action == -1):
-                prob_action = default
-                if (not feedback_avail):
-                    feedback_options.append(action_index)
-                elif (not feedback_options):
-                    step_options.append(action_index)
-            if (self.q_table[state][action_index] != 0):
-                prob_action *= np.exp(self.q_table[state][action_index])
-            denom += prob_action
-            action_probs.append([prob_action, feedback_avail])
-            if (prob_action < action_probs[min][0]):
-                min = current_index
-            current_index += 1
-        all_same_prob = True
-        # normalizing the probabilities
-        for j in range(len(action_probs)):
-            action_probs[j][0] /= denom
-            if (action_probs[0][0] != action_probs[j][0]):
-                all_same_prob = False
-        exploit = False
-        # when exploring, we prioritize never been there and unknown optimal steps, then low legibilities 
-        if (check_explore < self.exploration_rate):
-            print("EXPLORING")
-            #action_index = rm.choice(possible_actions)
-            #if we are exploring, we choose an action index based on the following priorities:
-            # 1. there is no feedback state for the state action pair, 2. not all optimal steps are known for this pair
-            # 3. legibility scores are low
-            np.random.seed(10)
-            if (feedback_options):
-                print("choosing based on feedback")
-                action_index = rm.choice(feedback_options)
-            elif (step_options):
-                print("choosing based on optimal steps")
-                action_index = rm.choice(step_options)
-            else:
-                print("choosing based on min legib")
-                num_action_probs = [item[0] for item in action_probs]
-                print("ARG MAX: ", np.argmin(num_action_probs))
-                action_index = possible_actions[np.argmin(num_action_probs)]
-                #print("choosing randomly")
-                #action_index = rm.choice(possible_actions)
-        else:
-            ''' the action probs do not seem to be in the right order
-                could it be possible that the q table is not working properly'''
-            exploit = True
-            print("EXPLOITING")
-            print(action_probs)
-            if (all_same_prob):
-                action_index = rm.choice(possible_actions)
-            else: 
-                num_action_probs = [item[0] for item in action_probs]
-                print("ARG MAX: ", np.argmax(num_action_probs))
-                action_index = possible_actions[np.argmax(num_action_probs)]
-            print(possible_actions)
-            print("CHOSEN ACTION INDEX: ", action_index)
-        new_state, tuple = task.take_action(action_index)
-        task.set_current_state(new_state)
-        known_terminal = len(env.task.get_terminal_states())
-        task.test.run_tests(exploit, tuple, self.num_steps - 1, self.terminal_state, known_terminal)
-        print("New state: ", new_state.desc)
-        return new_state, action_index
 
     def update_q_table(self, state, new_state, reward, action_index, new = False):
         ''' If we reach a new terminal state, make a new q table and do it
@@ -211,16 +351,16 @@ class ModQTablePolicy:
             print("Action Index: ", action_index)
             # Add terminal state to the legibility object and initialize optimal steps table
             self.legib.add_to_terminal(new_state)
-
             # Creating new q tables 
             if (len(self.q_tables.keys()) != 0):
-                new_q = self.create_q_table() 
+                self.create_q_table() 
                 print("CREATING Q TABLE FOR NEW STATE: ", new_state.desc)
             self.q_tables[new_state] = self.q_table
         elif (new_state in self.q_tables and new_state != self.terminal_state):
             self.q_table = self.q_tables[new_state]
         # feedback_state is the new state reached after a state action pair - we use its legibility score as the feedback
         self.legib.update_feedback(state, action_index, new_state)
+        print("Feedback table updated.")
         self.q_table[state][action_index] = self.q_table[state][action_index] * (1 - self.learning_rate) + self.learning_rate * (reward + self.discount_factor * \
                 np.max(self.q_table[new_state]))
         # We don't want the reward from a goal to interfere with the q table of another goal
@@ -232,24 +372,25 @@ class ModQTablePolicy:
                 q_table[state][action_index] = q_table[state][action_index] * \
                     (1 - self.learning_rate) + self.learning_rate * (reward + self.discount_factor * \
                     np.max(q_table[new_state]))
-        
-    # for debugging purposes
-    def print_q_tables(self):
-        for state_key in self.q_tables.keys():
-            print("Q Table: ", state_key.desc)
-            current_q = self.q_tables[state_key]
-            for key in current_q.keys():
-                    print("State ", self.legib.states[key],": ", current_q[key])
+
 
 if __name__=="__main__":
-    grid_dim = 5
-    classic_task = task.Task_Many_Goals(grid_dim, (0, grid_dim // 2), [(grid_dim - 1, 0), (grid_dim - 1, grid_dim - 1)], True)
-    behind_task = task.Task_Many_Goals(grid_dim, (0, 0), [(grid_dim - 2, grid_dim - 2), (grid_dim - 1, grid_dim - 1)], True)
-    between_task = task.Task_Many_Goals(grid_dim, (grid_dim // 2, grid_dim // 2), [(0, 0), (grid_dim - 1, grid_dim - 1)], True)
-    env = Environment(task)
-    mod_policy = ModQTablePolicy(env.states, env.actions_length, task.get_initial_state(), task.grid_dim)
-    orig_policy = OrigQTablePolicy(env.states, env.actions_length, task.get_initial_state(), task.grid_dim)
-    for i in range(10):
-        current_policy.learn_task(env)
-    task.test.display_results()
+    grid_dim = 3
+    test_mode = True
+    num_learns = 10
+    classic_task = task.Task_Many_Goals(grid_dim, (0, grid_dim // 2), [(grid_dim - 1, 0), (grid_dim - 1, grid_dim - 1)], num_learns, test_mode)
+    #behind_task = task.Task_Many_Goals(grid_dim, (0, 0), [(grid_dim - 2, grid_dim - 2), (grid_dim - 1, grid_dim - 1)], num_learns, test_mode)
+    #between_task = task.Task_Many_Goals(grid_dim, (grid_dim // 2, grid_dim // 2), [(0, 0), (grid_dim - 1, grid_dim - 1)], num_learns, test_mode)
+    env = Environment(classic_task)
+    mod_policy = ModQTablePolicy(env.states, env.actions_length, classic_task.get_initial_state(), classic_task.grid_dim)
+    orig_policy = OrigQTablePolicy(env.states, env.actions_length)
+    for i in range(num_learns):
+        mod_policy.learn_task(env)
+        #orig_policy.learn_task(env)
+    if (test_mode):
+        classic_task.test.display_results()
     
+# LEFT TO DO: AVERAGE REWARD AT THE END OF EACH 10 EPISODES - GRAPH IT AND PUT IT IN A MATPLOTLIB 
+# AVERAGE EPISODE AT WHICH ALL GOALS ARE FOUND (EASIER)
+        # Problem: exploit legib average is about the same as explore legib average
+        # reasons: choosing the action index for exploit is not working correctly or adding the legib and dividing is not working correctly

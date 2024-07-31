@@ -16,7 +16,7 @@ the main will call all functions in the test class'''
 
 class Test:
     
-    def __init__(self, states, initial_state, terminal_states, grid_dim, actions):
+    def __init__(self, states, initial_state, terminal_states, grid_dim, actions, num_learns):
         self.steps_left_side = 0
         self.steps_right_side = 0
         self.legib_explore = 0
@@ -27,6 +27,10 @@ class Test:
         self.num_exploit = 0
         self.initial_state = initial_state
         self.states = states
+        self.num_learns = num_learns
+        # stores the past number of known goals
+        self.past_known = 0
+        self.ep_all_known = 0
         # num known goals are the indices
         self.known_goals = [[0, 0, 0]]
         self.terminal_states = {}
@@ -115,10 +119,23 @@ class Test:
             current_opt_steps = self.opt_steps[new_state[0]][new_state[1]][self.terminal_states[terminal_state.desc]]
             if (exploit):
                 self.update_known_goals(new_state, terminal_known, current_legib, current_opt_steps)
-                #self.estimate_goals()
             self.update_avg_legib(exploit, new_state, terminal_state, current_legib, current_opt_steps)
+    
+    def learning_test(self, episode_reward, num_steps, episode, terminal_known):
+        # test for average episode at which all episodes are found
+        if (terminal_known > self.past_known and terminal_known == len(self.terminal_states)):
+            self.past_known = terminal_known
+            self.ep_all_known += episode + 1
+            print("EPISODE AT WHICH ALL GOALS ARE KNOWN: ", episode)
+        
+    # resets the past known number of terminal states at the beginning of every learning phase
+    def reset(self):
+        self.past_known = 0
 
     def display_results(self):
+        # TO DO: change this so that only the num learns in which all goals were found are included
+        print("AVERAGE EPISODE AT WHICH ALL GOALS KNOWN: ", self.ep_all_known / self.num_learns)
+        print()
         print("LEGIBS AS KNOWN GOALS INCREASE: ")
         for index in range(len(self.known_goals)):
             print("Known Goals: ", index)
@@ -131,10 +148,16 @@ class Test:
                 print("Average Legibility: Unknown")
         print()
         print("EXPLORE VS EXPLOIT LEGIBILITIES: ")
-        print("Exploiting Legib Average: ", self.legib_exploit / self.num_exploit)
-        print("Exploiting Steps Average: ", self.steps_exploit / self.num_exploit)
-        print("Exploring Legib Average: ", self.legib_explore / self.num_explore)
-        print("Exploring Steps Average: ", self.steps_explore / self.num_explore)
+        if (self.num_exploit != 0):
+            print("Exploiting Legib Average: ", self.legib_exploit / self.num_exploit)
+            print("Exploiting Steps Average: ", self.steps_exploit / self.num_exploit)
+        else:
+            print("Averages could not be calculated.")
+        if (self.num_explore != 0):
+            print("Exploring Legib Average: ", self.legib_explore / self.num_explore)
+            print("Exploring Steps Average: ", self.steps_explore / self.num_explore)
+        else:
+            print("Averages could not be calculated.")
 
 
 
