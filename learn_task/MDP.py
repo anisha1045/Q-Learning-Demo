@@ -4,7 +4,7 @@ import random as rm
 import task
 import policyshape
 
-''' Problems: q tables are not printing  gasp and optimal steps table is ALL WRONG'''
+''' Problems: q tables are not printing gasp and optimal steps table is ALL WRONG'''
 class Environment:
     
     def __init__(self, task):
@@ -36,7 +36,7 @@ class Environment:
     
 class OrigQTablePolicy():
     # here, we still choose a goal, but we don't do anything with legibility
-    def __init__(self, states, actions_length, total_episodes = 50, steps_per_episode = 15, exploration_rate = 0.7, exploration_decay = 0.01, discount_factor = 0.9, learning_rate = 0.7):
+    def __init__(self, states, actions_length, total_episodes = 50, steps_per_episode = 15, exploration_rate = 0.7, exploration_decay = 0.05, discount_factor = 0.9, learning_rate = 0.7):
         self.q_table = {}
         self.q_tables = {}
         self.actions_length = actions_length
@@ -133,7 +133,7 @@ class OrigQTablePolicy():
                 current_state = new_state
                 traj_steps += 1
             if (env.task.get_test_mode()):
-                env.task.test.learning_test(episode_reward, self.num_steps, episode, len(env.task.get_terminal_states()))
+                env.task.test.learning_test(episode_reward, episode, len(env.task.get_terminal_states()))
             self.exploration_rate *= (1 - self.exploration_decay)
             print("===================================")
             print("Episode reward: ", episode_reward)
@@ -186,7 +186,7 @@ class OrigQTablePolicy():
                     
 # Allows for multiple terminal states and implements policy shaping
 class ModQTablePolicy(OrigQTablePolicy):
-    def __init__(self, states, actions_length, start, grid_dim, total_episodes = 100, steps_per_episode = 7, exploration_rate = 0.7, exploration_decay = 0.01, discount_factor = 0.9, learning_rate = 0.7):
+    def __init__(self, states, actions_length, start, grid_dim, total_episodes = 50, steps_per_episode = 15, exploration_rate = 0.7, exploration_decay = 0.05, discount_factor = 0.9, learning_rate = 0.7):
         super().__init__(states, actions_length, total_episodes, steps_per_episode, exploration_rate, exploration_decay, discount_factor, learning_rate)
         self.legib = policyshape.PolicyShape(self.states, self.actions_length, start, grid_dim)
 
@@ -325,7 +325,7 @@ class ModQTablePolicy(OrigQTablePolicy):
                 traj_steps += 1
             print(self.legib.optimal_steps)
             if (env.task.get_test_mode()):
-                env.task.test.learning_test(episode_reward, self.num_steps, episode, len(env.task.get_terminal_states()))
+                env.task.test.learning_test(episode_reward, episode, len(env.task.get_terminal_states()))
             self.exploration_rate *= (1 - self.exploration_decay)
             print("===================================")
             print("Episode reward: ", episode_reward)
@@ -378,17 +378,18 @@ if __name__=="__main__":
     grid_dim = 3
     test_mode = True
     num_learns = 10
-    classic_task = task.Task_Many_Goals(grid_dim, (0, grid_dim // 2), [(grid_dim - 1, 0), (grid_dim - 1, grid_dim - 1)], num_learns, test_mode)
-    #behind_task = task.Task_Many_Goals(grid_dim, (0, 0), [(grid_dim - 2, grid_dim - 2), (grid_dim - 1, grid_dim - 1)], num_learns, test_mode)
-    #between_task = task.Task_Many_Goals(grid_dim, (grid_dim // 2, grid_dim // 2), [(0, 0), (grid_dim - 1, grid_dim - 1)], num_learns, test_mode)
-    env = Environment(classic_task)
-    mod_policy = ModQTablePolicy(env.states, env.actions_length, classic_task.get_initial_state(), classic_task.grid_dim)
+    num_episodes = 50
+    #classic_task = task.Task_Many_Goals(grid_dim, (0, grid_dim // 2), [(grid_dim - 1, 0), (grid_dim - 1, grid_dim - 1)], num_episodes, num_learns, test_mode)
+    #behind_task = task.Task_Many_Goals(grid_dim, (0, 0), [(grid_dim - 2, grid_dim - 2), (grid_dim - 1, grid_dim - 1)], num_episodes,  num_learns, test_mode)
+    between_task = task.Task_Many_Goals(grid_dim, (grid_dim // 2, grid_dim // 2), [(0, 0), (grid_dim - 1, grid_dim - 1)], num_episodes, num_learns, test_mode)
+    env = Environment(between_task)
+    mod_policy = ModQTablePolicy(env.states, env.actions_length, between_task.get_initial_state(), between_task.grid_dim, num_episodes)
     orig_policy = OrigQTablePolicy(env.states, env.actions_length)
     for i in range(num_learns):
-        mod_policy.learn_task(env)
-        #orig_policy.learn_task(env)
+        #mod_policy.learn_task(env)
+        orig_policy.learn_task(env)
     if (test_mode):
-        classic_task.test.display_results()
+        between_task.test.display_results()
     
 # LEFT TO DO: AVERAGE REWARD AT THE END OF EACH 10 EPISODES - GRAPH IT AND PUT IT IN A MATPLOTLIB 
 # AVERAGE EPISODE AT WHICH ALL GOALS ARE FOUND (EASIER)

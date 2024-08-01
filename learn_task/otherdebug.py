@@ -1,11 +1,30 @@
-import numpy as np
-action_probs = [[0.1, True], [0.2, True], [0.3, True]]
-# [[0.3333333333333333, False], [0.3333333333333333, False], [0.3333333333333333, False]]
-unique_values, counts = np.unique([row[0] for row in action_probs], return_counts=True)
-duplicates = unique_values[counts > 1]
-if len(duplicates) > 0:
-    # Get the smallest duplicate value
-    smallest_duplicate = np.min(duplicates)
-# Get the indices of this smallest duplicate value
-smallest_duplicate_indices = np.where([row[0] for row in action_probs] == smallest_duplicate)[0]
-print(f"Indices of the smallest duplicate value ({smallest_duplicate}):", smallest_duplicate_indices)
+import matplotlib.pyplot as plt
+
+class GraphMaker:
+
+    def __init__(self, num_eps, data_points):
+        # Orig data
+        self.x = [num_eps * i / data_points for i in range(data_points)]
+        self.y = [0, 1.34, 4.37, 5.29, 5.4, 6.21]
+
+        # Mod data
+        self.x1 = [num_eps * i / data_points for i in range(data_points)]
+        self.y2 = [0, 3.26, 3.91, 3.59, 3.16, 4.1]
+
+    def make_graph(self):
+        # Plotting the line graph
+        plt.plot(self.x, self.y, label='Original', color='orange', linestyle='-', marker='o')
+        plt.plot(self.x1, self.y2, label='Modified', color='pink', linestyle='-', marker='o')
+
+        # Adding labels and title
+        plt.xlabel('Number of Episodes')
+        plt.ylabel('Average Reward')
+        plt.title('Learning Efficiency For Original vs Modified Q Policy')
+
+        # Adding a legend
+        plt.legend()
+
+        # Displaying the plot
+        plt.show()
+
+    graph = GraphMaker(50, 5)

@@ -47,7 +47,7 @@ class Task(ABC):
         return self.current_state
         
 class Task_Many_Goals(Task):
-    def __init__(self, grid_dim, start_state, end_states, num_learns, test_mode = False):
+    def __init__(self, grid_dim, start_state, end_states, num_eps, num_learns, test_mode = False):
         self.actions = action.TaskMoveActions.ALL
         print("Task Actions List: ", self.actions)
         self.grid_dim = grid_dim # can change for any grid dimension
@@ -86,7 +86,7 @@ class Task_Many_Goals(Task):
         self.x_start = 0.06
         self.y_start = -0.27
         self.z_start = -0.44
-        self.test = test.Test(self.states, self.initial_coordinates, self.goals, grid_dim, self.actions, num_learns)
+        self.test = test.Test(self.states, self.initial_coordinates, self.goals, grid_dim, self.actions, num_eps, num_learns)
         #self.arm = arm
 
     @property

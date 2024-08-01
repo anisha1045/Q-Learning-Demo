@@ -1,5 +1,5 @@
 import numpy as np
-import time
+import matplotlib.pyplot as plt
 ''' class Test that contains all of the tests
 set np.seed to the same values and set the goals states to the same start positions so it can be replicated
 for the same set of random seeds, run the test class which contains the different tests
@@ -16,7 +16,7 @@ the main will call all functions in the test class'''
 
 class Test:
     
-    def __init__(self, states, initial_state, terminal_states, grid_dim, actions, num_learns):
+    def __init__(self, states, initial_state, terminal_states, grid_dim, actions, num_eps, num_learns):
         self.steps_left_side = 0
         self.steps_right_side = 0
         self.legib_explore = 0
@@ -27,7 +27,12 @@ class Test:
         self.num_exploit = 0
         self.initial_state = initial_state
         self.states = states
+        self.num_eps = num_eps
         self.num_learns = num_learns
+        self.avg_rewards = None
+        self.data_points = 5
+        if (num_eps > self.data_points):
+            self.avg_rewards = np.zeros((self.data_points, 2))
         # stores the past number of known goals
         self.past_known = 0
         self.ep_all_known = 0
@@ -121,18 +126,30 @@ class Test:
                 self.update_known_goals(new_state, terminal_known, current_legib, current_opt_steps)
             self.update_avg_legib(exploit, new_state, terminal_state, current_legib, current_opt_steps)
     
-    def learning_test(self, episode_reward, num_steps, episode, terminal_known):
+    def learning_test(self, episode_reward, episode, terminal_known):
         # test for average episode at which all episodes are found
         if (terminal_known > self.past_known and terminal_known == len(self.terminal_states)):
             self.past_known = terminal_known
             self.ep_all_known += episode + 1
-            print("EPISODE AT WHICH ALL GOALS ARE KNOWN: ", episode)
+        # testing for reward efficiency 
+        if (self.avg_rewards is not None):
+            print("ADDING EPISODE REWARD TO AVG REWARDS: ", episode_reward)
+            index = episode // (self.num_eps // self.data_points)
+            self.avg_rewards[index][0] += episode_reward
+            self.avg_rewards[index][1] += 1
         
     # resets the past known number of terminal states at the beginning of every learning phase
     def reset(self):
         self.past_known = 0
-
     def display_results(self):
+        rewards = [0]
+        for data_point in self.avg_rewards:
+            print(data_point[0])
+            print(data_point[1])
+            data_point[0] /= data_point[1]
+            rewards.append(data_point[0])
+            print("Avg reward: ", data_point[0])
+        print(rewards)
         # TO DO: change this so that only the num learns in which all goals were found are included
         print("AVERAGE EPISODE AT WHICH ALL GOALS KNOWN: ", self.ep_all_known / self.num_learns)
         print()

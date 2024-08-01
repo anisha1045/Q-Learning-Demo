@@ -49,10 +49,6 @@ class PolicyShape():
 
     def update_feedback(self, state, action_index, new_state):
         self.feedback_table[state][action_index] = new_state
-        print("FEEDBACK TABLE: ")
-        for state in self.feedback_table:
-            print("State: ", state, state.desc)
-            print(self.feedback_table[state])
 
     def propagate_opt_steps(self, new_state, terminal_state, stop, states_queue, old_opt_steps, traj_steps, index_best):
         new_opt_steps = self.get_opt_steps(new_state, terminal_state)
