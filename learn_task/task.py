@@ -36,6 +36,7 @@ class Task(ABC):
 
 class Task_Stack(Task):
     def __init__(self):
+        print("Created task stack object.")
         # CHANGE THIS TO THE SPECIFIC ACTION
         self.actions = action.TaskStackActions.ALL
         self.states = {((0, 0, 0), (0, 0, 0)) : state.State(actions = [0, 1], reward = -1, location=((0, 0, 0), (0, 0, 0))),
@@ -59,6 +60,7 @@ class Task_Stack(Task):
     
 class Task_Move(Task):
     def __init__(self, grid_dim):
+        print("Created task move object.")
         self.actions = action.TaskMoveActions.ALL
         print("Task Actions List: ",self.actions)
         self.grid_dim = grid_dim # can change for any grid dimension
@@ -94,7 +96,6 @@ class Task_Move(Task):
         return action.execute(states, self.current_state, self.distance_delta, arm)
 
     def reset(self, arm):
-        #self.arm.home_arm()
         self.x_start = 0.06
         self.y_start = -0.27
         self.z_start = -0.44

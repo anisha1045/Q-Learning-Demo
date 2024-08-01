@@ -24,17 +24,13 @@ class Environment:
         policy.update_q_table(current_state, new_state, current_reward, action_index)
         stop = False
         if new_state in self.task.terminal_states:
-            self.terminal_state_cb()
             stop = True
         self.task.set_current_state(new_state)
         return num_steps, stop, episode_reward
 
-    def terminal_state_cb(self):
+    def reset(self):
         self.arm.open_gripper()
         self.arm.home_arm()
-        pass
-
-    def reset(self):
         self.current_state = self.task.reset(self.arm)
 
 class QTablePolicy:
@@ -108,8 +104,9 @@ class QTablePolicy:
         
 
 if __name__=="__main__":
-    task = task.Task_Stack()
-    #task = task.Task_Move(3)
+    #task = task.Task_Stack()
+    print("Creating a task object of task move")
+    task = task.Task_Move(3)
     env = Environment(robot.Robot(), task)
     current_policy = QTablePolicy(env.states, env.actions_length)
     current_policy.learn_task(env)
