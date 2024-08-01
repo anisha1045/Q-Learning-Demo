@@ -1,3 +1,5 @@
+import sub
+
 class Action:
     ALL = []
 
@@ -79,6 +81,7 @@ class TaskMoveActions(Action):
         self._name = behavior.__name__  # Use the function name as the action name
         self._do = behavior
         __class__.ALL.append(self)
+        self.sub_object = sub.Color_Detect_Sub()
         setattr(Action, self._name, self)
 
     @classmethod
@@ -88,36 +91,26 @@ class TaskMoveActions(Action):
         return make_action
 
     def execute(self, states, state, distance_delta, arm):
-        return self._do(states, state, distance_delta, arm)
+        self._do(distance_delta, arm)
+        # the call to the following function returns a tuple in the form (row, col)
+        return states[self.sub_object.color_detection_subscriber()]
 
 @TaskMoveActions.make_task_move_action()
-def up(states, state, distance_delta, arm):
-    new_row = state.desc[0] - 1
-    new_col = state.desc[1]
+def up(distance_delta, arm):
     print("UP")
     arm.goto_cartesian_pose(0, -distance_delta, 0)
-    return states[(new_row, new_col)]
 
 @TaskMoveActions.make_task_move_action()
-def down(states, state, distance_delta, arm):
-    new_row = state.desc[0] + 1
-    new_col = state.desc[1]
+def down(distance_delta, arm):
     print("DOWN")
     arm.goto_cartesian_pose(0, distance_delta, 0)
-    return states[(new_row, new_col)]
 
 @TaskMoveActions.make_task_move_action()
-def left(states, state, distance_delta, arm):
-    new_row = state.desc[0]
-    new_col = state.desc[1] - 1
+def left(distance_delta, arm):
     print("LEFT")
     arm.goto_cartesian_pose(distance_delta, 0, 0)
-    return states[(new_row, new_col)]
 
 @TaskMoveActions.make_task_move_action()
-def right(states, state, distance_delta,  arm):
-    new_row = state.desc[0]
-    new_col = state.desc[1] + 1
+def right(distance_delta,  arm):
     arm.goto_cartesian_pose(-distance_delta, 0, 0)
     print("RIGHT")
-    return states[(new_row, new_col)]

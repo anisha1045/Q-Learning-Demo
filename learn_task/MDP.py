@@ -105,7 +105,6 @@ class QTablePolicy:
 
 if __name__=="__main__":
     #task = task.Task_Stack()
-    print("Creating a task object of task move")
     task = task.Task_Move(3)
     env = Environment(robot.Robot(), task)
     current_policy = QTablePolicy(env.states, env.actions_length)
