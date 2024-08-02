@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <node pkg="learn_task" type="/catkin_ws/src/reu2024/scri
+pts/Q-Learning-Demo-1/learn_task/pub.py" name="camera_pub" output="screen"></node>
+    <node pkg="learn_task" type="/catkin_ws/src/reu2024/scri
+pts/Q-Learning-Demo-1/learn_task/sub.py" name="camera_sub" output="screen"></node>
+    <node pkg="learn_task" type="/catkin_ws/src/reu2024/scri
+pts/Q-Learning-Demo-1/learn_task/robot.py" name="arm" output="screen"></node>
+</launch>
