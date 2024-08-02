@@ -1,4 +1,4 @@
-import sub
+import  pub
 
 class Action:
     ALL = []
@@ -81,7 +81,11 @@ class TaskMoveActions(Action):
         self._name = behavior.__name__  # Use the function name as the action name
         self._do = behavior
         __class__.ALL.append(self)
-        self.sub_object = sub.Color_Detect_Sub()
+        try:
+            pub_object = pub.Color_Detection_Pub()
+            pub_object.color_detection_publisher()
+        except rospy.ROSInterruptException:
+            pass
         setattr(Action, self._name, self)
 
     @classmethod
@@ -93,7 +97,7 @@ class TaskMoveActions(Action):
     def execute(self, states, state, distance_delta, arm):
         self._do(distance_delta, arm)
         # the call to the following function returns a tuple in the form (row, col)
-        return states[self.sub_object.color_detection_subscriber()]
+        return states[self.pub_object.get_position()]
 
 @TaskMoveActions.make_task_move_action()
 def up(distance_delta, arm):

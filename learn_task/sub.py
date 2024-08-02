@@ -9,10 +9,10 @@ import cv2
 class Color_Detect_Sub:
  
  
-  def __init__(self, bridge, cv_image, current_position ):
-     self.bridge = bridge = CvBridge()
-     self.cv_image = cv_image =  None
-     self.current_position = current_position = ""
+  def __init__(self):
+     self.bridge = CvBridge()
+     self.cv_image = None
+     self.current_position = ""
  
 
 
@@ -47,8 +47,8 @@ class Color_Detect_Sub:
   def color_detection_subscriber(self):
     # TO DO: image_callback and position_callback have those yellow squiggly lines
      rospy.init_node('color_detection_subsriber', anonymous=True)
-     rospy.Subscriber('color_detection/image', Image, image_callback)
-     rospy.Subscriber('color_detection/position', String, position_callback)
+     rospy.Subscriber('color_detection/image', Image, self.image_callback())
+     rospy.Subscriber('color_detection/position', String, self.position_callback())
      rate = rospy.Rate(1)
      #rate.sleep()
      self.display_image()
