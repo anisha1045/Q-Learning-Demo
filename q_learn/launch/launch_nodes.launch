@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="q_learn" type="pub.py" name="camera_pub" output="screen"></node>
+    <node pkg="q_learn" type="sub.py" name="camera_sub" output="screen"></node>
+    <node pkg="q_learn" type="robot.py" name="arm" output="screen"></node>
+</launch>
