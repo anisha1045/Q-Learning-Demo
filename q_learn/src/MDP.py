@@ -35,7 +35,7 @@ class Environment:
 
 class QTablePolicy:
 
-    def __init__(self, states, actions_length, total_episodes = 10, steps_per_episode = 10, exploration_rate = 0.7, exploration_decay = 0.01, discount_factor = 0.9, learning_rate = 0.7):
+    def __init__(self, states, actions_length, total_episodes = 5, steps_per_episode = 10, exploration_rate = 0.7, exploration_decay = 0.01, discount_factor = 0.9, learning_rate = 0.7):
         self.q_table = {}
         self.total_episodes = total_episodes
         self.steps_per_episode = steps_per_episode
@@ -44,12 +44,14 @@ class QTablePolicy:
         self.discount_factor = discount_factor
         self.learning_rate = learning_rate
         self.end_episode = False
+        self.current_ep = 0
         self.states = states
         for state in states.values():
             self.q_table[state] = np.zeros(actions_length)
 
     def learn_task(self, env):
         for episode in range(self.total_episodes):
+            self.current_ep = episode
             print("Episode: ", episode)    
             episode_reward = 0
             num_steps = 0

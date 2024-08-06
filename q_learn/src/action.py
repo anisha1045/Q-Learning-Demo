@@ -93,16 +93,6 @@ class TaskMoveActions(Action):
             return cls(behavior)
         return make_action
 
-    # calls the sub_object's get_pos function
-    def get_pos(self):
-        self.sub_object.get_pos(self)
-
-    # called by the sub_object to send the message
-    def set_pos(self, pos):
-        self.pos = pos
-        return pos
-
-
     def execute(self, states, state, distance_delta, arm):
         self._do(distance_delta, arm)
         # the call to the following function returns a tuple in the form (row, col)
@@ -111,19 +101,19 @@ class TaskMoveActions(Action):
 @TaskMoveActions.make_task_move_action()
 def up(distance_delta, arm):
     print("UP")
-    arm.goto_cartesian_pose(0, -distance_delta, 0)
+    arm.goto_cartesian_pose(-distance_delta, 0, 0)
 
 @TaskMoveActions.make_task_move_action()
 def down(distance_delta, arm):
     print("DOWN")
-    arm.goto_cartesian_pose(0, distance_delta, 0)
+    arm.goto_cartesian_pose(distance_delta, 0, 0)
 
 @TaskMoveActions.make_task_move_action()
 def left(distance_delta, arm):
     print("LEFT")
-    arm.goto_cartesian_pose(distance_delta, 0, 0)
+    arm.goto_cartesian_pose(0, -distance_delta, 0)
 
 @TaskMoveActions.make_task_move_action()
 def right(distance_delta,  arm):
-    arm.goto_cartesian_pose(-distance_delta, 0, 0)
+    arm.goto_cartesian_pose(0, distance_delta, 0)
     print("RIGHT")

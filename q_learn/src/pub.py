@@ -34,6 +34,20 @@ class Color_Detection_Pub:
    def fixHSVRange(h, s, v):   #calibrates the HSV for color detection
        return (180 * h /360, 255 * s /100, 255 * v / 100)
 
+   def zoom_center(self, img, zoom_factor=5):
+
+     y_size = img.shape[0]
+     x_size = img.shape[1]
+     
+     # define new boundaries
+     x1 = int(0.5*x_size*(1-1/zoom_factor))
+     x2 = int(x_size-0.5*x_size*(1-1/zoom_factor))
+     y1 = int(0.5*y_size*(1-1/zoom_factor))
+     y2 = int(y_size-0.5*y_size*(1-1/zoom_factor))  
+     # first crop image then scale
+     img_cropped = img[y1:y2,x1:x2]
+     return cv2.resize(img_cropped, None, fx=zoom_factor, fy=zoom_factor)
+
    def color_detection_publisher(self):
 
        #Color_Detection_Pub.get_limits()
@@ -68,6 +82,8 @@ class Color_Detection_Pub:
            new_width = int(width * scale)
            new_height = int(height * scale)
            frame = cv2.resize(frame, (new_width, new_height), interpolation = cv2.INTER_AREA)
+
+           frame = self.zoom_center(frame)
 
            x1 = new_height // 3 #Vertical Lines
            x2 = 2 * new_height // 3 #Vertical Lines
@@ -123,20 +139,20 @@ class Color_Detection_Pub:
                center_y = y + h // 2
 
                if center_x < x1:   #detects which grid tile the detected object is in
-                   col = 1
+                   col = 0
                elif center_x < x2:
-                   col = 2
+                   col = 1
                else:
-                   col = 3
+                   col = 2
 
                if center_y < y1:
-                   row = 1
+                   row = 0
                elif center_y < y2:
-                   row = 2
+                   row = 1
                else:
-                  row = 3
+                  row = 2
 
-               pos_of_grid = f"{col} {row}"  #Acquires where the detected object is in the grid
+               pos_of_grid = f"{row} {col}"  #Acquires where the detected object is in the grid
                cv2.putText(frame, pos_of_grid, (x, y- 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,0), 2)  #text over detected object
 
            cv2.line(frame, (x1, 0), (x1, height), (0, 255, 0), 2)

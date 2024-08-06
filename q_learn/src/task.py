@@ -65,6 +65,7 @@ class Task_Move(Task):
         print("Task Actions List: ",self.actions)
         self.grid_dim = grid_dim # can change for any grid dimension
         self.states = {}
+        # cols - i, rows - j
         for i in range(grid_dim):
             for j in range(grid_dim):
                 possible_actions = [0, 1, 2, 3]
@@ -82,11 +83,11 @@ class Task_Move(Task):
                     possible_actions.remove(3)
                 self.states[(i, j)] = state.State(possible_actions, -1, i, j)
         self.states[(grid_dim - 1, grid_dim - 1)].reward = 10
-        self.distance_delta = 0.1
+        self.distance_delta = 0.11
         self.terminal_states = [self.states[(grid_dim - 1, grid_dim - 1)]]
-        self.x_start = -0.19
-        self.y_start = -0.34
-        self.z_start = -.44
+        self.x_start = -0.22
+        self.y_start = -0.33
+        self.z_start = -.45
         self.initial_state = self.current_state = self.states[(0,0)]
         #self.arm = arm
 

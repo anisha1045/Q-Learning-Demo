@@ -32,6 +32,10 @@ class Color_Detect_Sub:
      split_list = self.current_position.split(' ')
      self.pos = tuple(map(int, split_list))
      print("Current Pos: ", self.pos)
+     file = open('sub_output.txt', 'w')
+     file.write(data.data)
+     file.flush()
+     file.close()
      return rospy.loginfo(f"Current Position: {self.current_position}")
    
   def color_detection_subscriber(self):
@@ -49,13 +53,15 @@ class Color_Detect_Sub:
      return self.pos
 
   def get_pos(self):
-      self.color_detection_subscriber()
-      print("Returning: ", self.pos)
+      data = rospy.wait_for_message('color_detection/position', String)
+      split_list = str(data.data).split(' ')
+      self.pos = tuple(map(int, split_list))
+      print(self.pos)
       return self.pos
 
-if __name__ == '__main__':
+'''if __name__ == '__main__':
     try: 
          sub = Color_Detect_Sub()
          sub.color_detection_subscriber()
     except rospy.ROSInterruptException:
-        pass  
+        pass  '''
