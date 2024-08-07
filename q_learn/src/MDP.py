@@ -35,7 +35,7 @@ class Environment:
 
 class QTablePolicy:
 
-    def __init__(self, states, actions_length, total_episodes = 5, steps_per_episode = 10, exploration_rate = 0.7, exploration_decay = 0.01, discount_factor = 0.9, learning_rate = 0.7):
+    def __init__(self, states, actions_length, total_episodes = 10, steps_per_episode = 10, exploration_rate = 0.7, exploration_decay = 0.01, discount_factor = 0.9, learning_rate = 0.7):
         self.q_table = {}
         self.total_episodes = total_episodes
         self.steps_per_episode = steps_per_episode
